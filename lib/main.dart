@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'package:easy_splash_screen/easy_splash_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -84,6 +85,7 @@ class _MyAppState extends State<MyApp> {
   late int hours;
   late String message1;
   late String message2;
+  late bool notifyFromDashboardOnly;
 
   @override
   void initState() {
@@ -126,6 +128,7 @@ class _MyAppState extends State<MyApp> {
       seconds = data['seconds'] as int;
       hours = data['hour'] as int;
       message1 = data['message1'] as String;
+      notifyFromDashboardOnly = data['dashboard'] as bool;
 
       locally.showPeriodically(
           title: "TradePadi",
@@ -176,13 +179,13 @@ class _MyAppState extends State<MyApp> {
                       Timer.periodic(Duration(seconds: seconds), (Timer t) {
                         var currentUrl = urlController.text.toLowerCase();
 
-                        if (currentUrl.contains(
-                            (RegExp(r'dashboard', caseSensitive: false)))) {
+                        var isDashboard = currentUrl.contains(
+                            (RegExp(r'dashboard', caseSensitive: false)));
+                        if (isDashboard || !notifyFromDashboardOnly) {
                           webViewController!.evaluateJavascript(source: """
                               (function(){
                        var userID = document.getElementById('user-id').value;
                        return userID;     
-                      
                               })()
                               """).then((value) {
                             if (value != null) {
@@ -191,8 +194,6 @@ class _MyAppState extends State<MyApp> {
                                       value.toString();
                               var myUrl = Uri.parse(completeUrl);
                               http.get(myUrl).then((value) {
-//
-
                                 if (int.parse(value.body) >= 1) {
                                   locally.show(
                                       title: "TradePadi", message: message1);
